@@ -91,8 +91,33 @@ export const useGameStore = defineStore('game', () => {
       grid.value.push(row)
     }
     
-    while (hasMatches()) {
+    ensurePlayableBoard()
+  }
+  
+  function ensurePlayableBoard() {
+    let attempts = 0
+    const maxAttempts = 100
+    
+    while (!hasMatches() && attempts < maxAttempts) {
       regenerateBoard()
+      attempts++
+    }
+    
+    if (!hasMatches()) {
+      forceCreateMatches()
+    }
+  }
+  
+  function forceCreateMatches() {
+    const size = gridSize.value
+    const mid = Math.floor(size / 2)
+    const value = grid.value[mid][mid].value
+    
+    if (mid + 1 < size) {
+      grid.value[mid][mid + 1].value = value
+    }
+    if (mid - 1 >= 0) {
+      grid.value[mid][mid - 1].value = value
     }
   }
   
@@ -182,7 +207,7 @@ export const useGameStore = defineStore('game', () => {
         if (score.value >= levelGoal.value) {
           completeLevel()
         } else if (!hasPossibleMoves()) {
-          checkGameOver()
+          ensurePlayableBoard()
         }
       }, 300)
     } else {
@@ -324,9 +349,7 @@ export const useGameStore = defineStore('game', () => {
         
       case 'refresh':
         regenerateBoard()
-        while (hasMatches()) {
-          regenerateBoard()
-        }
+        ensurePlayableBoard()
         items.value.refresh--
         break
         
@@ -503,9 +526,7 @@ export const useGameStore = defineStore('game', () => {
   function shuffleBoard() {
     saveGameState()
     regenerateBoard()
-    while (hasMatches()) {
-      regenerateBoard()
-    }
+    ensurePlayableBoard()
   }
   
   return {
